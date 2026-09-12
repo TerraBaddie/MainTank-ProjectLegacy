@@ -9,5 +9,8 @@ Tank mitigation &amp; incoming-damage analysis addon for Project Legacy /w many 
 <img width="986" height="632" alt="image" src="https://github.com/user-attachments/assets/14844743-588d-4328-a5a6-f7ceba35ce51" />
 
 ## UI Picture
-<img width="388" height="300" alt="pfUI_MainTank" src="https://github.com/user-attachments/assets/658d494a-dc78-448d-842a-6d0359c0c96e" />
+<img width="394" height="304" alt="image" src="https://github.com/user-attachments/assets/23f4a3e0-4792-4ea2-b976-b78f49e73bc5" />
+<img width="394" height="304" alt="image" src="https://github.com/user-attachments/assets/d128ca45-5659-49eb-9bbb-b915a5ebd4a4" />
+<img width="394" height="304" alt="image" src="https://github.com/user-attachments/assets/1348b343-4de5-4d59-a534-3db199604287" />
+
 
