@@ -6,7 +6,7 @@ Tank mitigation &amp; incoming-damage analysis addon for Project Legacy /w many 
 1. Remove or replace the previous `MainTank`, `MainTank_Archive`, and `MainTank_History` addon folders.
 2. Extract the 3 folders `MainTank`, `MainTank_Archive`, and `MainTank_History` into `Interface\\AddOns\\`.
 3. Restart World of Warcraft or reload the UI.
-<img width="986" height="632" alt="image" src="https://github.com/user-attachments/assets/14844743-588d-4328-a5a6-f7ceba35ce51" />
+<img width="986" height="654" alt="image" src="https://github.com/user-attachments/assets/5ac46375-6acb-4bc8-90ce-fb14179bb871" />
 
 ## UI Picture
 <img width="394" height="304" alt="image" src="https://github.com/user-attachments/assets/23f4a3e0-4792-4ea2-b976-b78f49e73bc5" />
