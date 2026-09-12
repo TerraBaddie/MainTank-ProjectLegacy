@@ -1640,6 +1640,10 @@ end
 
 function RC6_EnsureEventAttribution(eventData)
     if not eventData then return eventData end
+    -- LAYEREDSTOP3 safety: this first-generation RC6 helper predates outcome-aware
+    -- attribution.  Old RC6q/summary/display code can still call it indirectly.
+    -- Never let it restore base RAW / zero DR on an already-finalized outcome.
+    if tonumber(eventData.layeredOutcomeVersion) then return eventData end
     if eventData.rc6MathVersion == 2 then return eventData end
 
     -- Undo the earlier RC6 pass if this event came from that build.
@@ -1782,7 +1786,7 @@ end
 
 function MT:BuildDamageEvent(mob, attack, amountTaken, blocked, resisted, absorbed, school, isCrit, hitType, ignoreArmor)
     local eventData = RC6_BaseBuildDamageEvent(self, mob, attack, amountTaken, blocked, resisted, absorbed, school, isCrit, hitType, ignoreArmor)
-    return RC6_EnsureEventAttribution(eventData)
+    return RC6B_EnsureEventAttribution(eventData)
 end
 
 function MT:BuildAvoidanceEvent(kind, mob, attack, postArmorAmount, school)
@@ -1799,7 +1803,10 @@ function RC6_SumEventDR(events)
     local sums = {flat=0, physical=0, magic=0, physicalFlat=0, magicFlat=0, added=0, physicalAdded=0, magicAdded=0}
     local i, e, flat, phys, magic
     for i=1,table.getn(events or {}) do
-        e = RC6_EnsureEventAttribution(events[i])
+        -- LAYEREDSTOP3: always use the final attribution gate.  RC6q still calls
+        -- this legacy summation helper, and using the first-generation RC6 helper
+        -- here could mutate FullBlock events after they had already been finalized.
+        e = RC6B_EnsureEventAttribution(events[i])
         flat = tonumber(e.flatDR) or 0
         phys = tonumber(e.physicalDR) or 0
         magic = tonumber(e.magicDR) or 0
@@ -1839,7 +1846,7 @@ function MT:GetTimelineDetails(firstSecond, lastSecond)
     local events = self:GetDisplayEvents() or {}
     local i, e, sec
     for i=1,table.getn(events) do
-        e = RC6_EnsureEventAttribution(events[i])
+        e = RC6B_EnsureEventAttribution(events[i])
         sec = floor(e.time or 0)
         if sec >= firstSecond and sec <= lastSecond then
             d.flatDR = d.flatDR + (e.flatDR or 0)
@@ -1910,7 +1917,7 @@ function MT:EventMatchesDetailsFilter(event)
 end
 
 function MT:FormatEventOutcome(event)
-    RC6_EnsureEventAttribution(event)
+    RC6B_EnsureEventAttribution(event)
     local text = RC6_BaseFormatEventOutcome(self, event)
     if (event.flatDR or 0) > 0 then text = text .. "  Flat DR " .. self:FormatNumber(event.flatDR) end
     if (event.physicalDR or 0) > 0 then text = text .. "  Physical DR " .. self:FormatNumber(event.physicalDR) end
@@ -1920,7 +1927,7 @@ end
 
 function MT:FormatEventInspector(event)
     if not event then return RC6_BaseFormatEventInspector(self, event) end
-    RC6_EnsureEventAttribution(event)
+    RC6B_EnsureEventAttribution(event)
     local text = RC6_BaseFormatEventInspector(self, event)
     if (event.flatDR or 0) > 0 or (event.physicalDR or 0) > 0 or (event.magicDR or 0) > 0 then
         text = text .. "\nDR(est.) Flat " .. self:FormatNumber(event.flatDR or 0) ..
@@ -5113,3 +5120,220 @@ function RC6B_EnsureEventAttribution(eventData)
     RC6U_Result = RC6U_PreviousEnsureEventAttribution(eventData)
     return RC6U_NormalizeOutcome(RC6U_Result)
 end
+
+
+-- ============================================================================
+-- RC6v / LAYEREDSTOP2 - immutable finalized outcomes + hand-aware Full Block
+-- ============================================================================
+-- PL11 live data exposed two linked Full Block defects:
+--   1) A finalized LAYEREDSTOP1 event could be passed through the older RC6
+--      stack again after Pass-2A stripped rc6MathVersion. The old stack restored
+--      base RAW/zero DR, then the late outcome marker prevented re-normalization.
+--   2) Dual-wield Full Block used the union of MH/OH ranges as one continuous
+--      range. If Block Value made only the OH range possible, the midpoint could
+--      land in the impossible gap between OH and MH.
+--
+-- LAYEREDSTOP2 makes finalized outcome attribution immutable BEFORE the older
+-- RC6 stack can touch it, validates the accounting invariant, chooses feasible
+-- MH/OH ranges independently for Full Block, and normalizes outcome events
+-- before RecordEvent builds Timeline/Overall buckets.
+-- ============================================================================
+
+RC6V_PreviousContextForEvent = RC6_ContextForEvent
+function RC6_ContextForEvent(eventData)
+    if eventData and type(eventData.rc6ContextSnapshot) == "table" then
+        return eventData.rc6ContextSnapshot
+    end
+    -- Pass-2A/SVH1 persists compact numeric context references on completed
+    -- live fights. Prefer that event-specific historical context over today's
+    -- active context when a saved fight is opened after combat or /reload.
+    if eventData and tonumber(eventData.context) and MT.profile and
+       type(MT.profile.compactContextPool) == "table" then
+        RC6V_Context = MT.profile.compactContextPool[tonumber(eventData.context)]
+        if type(RC6V_Context) == "table" then return RC6V_Context end
+    end
+    return RC6V_PreviousContextForEvent(eventData)
+end
+
+function RC6V_ClippedRangeMid(low, high, maxRaw)
+    low = tonumber(low) or 0
+    high = tonumber(high) or 0
+    maxRaw = tonumber(maxRaw)
+    if low <= 0 or high < low then return nil end
+    if maxRaw and high > maxRaw then high = maxRaw end
+    if high + 0.0001 < low then return nil end
+    return (low + high) / 2, low, high
+end
+
+-- Replace the LAYEREDSTOP1 selector with a dual-wield-aware Full Block solver.
+-- Dodge/Parry/Miss deliberately retain the combined MH/OH average because the
+-- avoided combat text gives us no hand-specific terminal constraint.
+function RC6U_SelectRawEstimate(eventData, model, armorRate)
+    RC6U_Hint, RC6U_Low, RC6U_High = nil, nil, nil
+    if RC6B_GetWhiteSwingRange then
+        RC6U_Hint, RC6U_Low, RC6U_High = RC6B_GetWhiteSwingRange(eventData)
+    end
+
+    RC6U_BlockValue = tonumber(eventData.rc6BlockValue) or 0
+    RC6U_Note = nil
+
+    if RC6U_Hint and RC6U_Low and RC6U_High then
+        RC6U_Raw = RC6U_Hint
+
+        if eventData.kind == "FullBlock" and RC6U_BlockValue > 0 then
+            RC6U_MaxRaw = RC6U_MaxRawForTerminalAmount(RC6U_BlockValue, model, armorRate)
+
+            -- Dual wield: MH and OH are two discrete ranges, not one continuous
+            -- 17..43-style range. Test each hand independently against the
+            -- maximum raw roll that can still fit under event-time Block Value.
+            if eventData.rawHintDualWield then
+                RC6V_MHMid = RC6V_ClippedRangeMid(eventData.rawHintMHLow, eventData.rawHintMHHigh, RC6U_MaxRaw)
+                RC6V_OHMid = RC6V_ClippedRangeMid(eventData.rawHintOHLow, eventData.rawHintOHHigh, RC6U_MaxRaw)
+
+                if RC6V_MHMid and not RC6V_OHMid then
+                    RC6U_Raw = RC6V_MHMid
+                    RC6U_Note = "Full Block proven main-hand feasible by event-time Block Value"
+                    return RC6U_Raw, RC6U_Note, "UnitDamage MH range"
+                elseif RC6V_OHMid and not RC6V_MHMid then
+                    RC6U_Raw = RC6V_OHMid
+                    RC6U_Note = "Full Block proven off-hand feasible by event-time Block Value"
+                    return RC6U_Raw, RC6U_Note, "UnitDamage OH range"
+                elseif RC6V_MHMid and RC6V_OHMid then
+                    -- Both hands can produce the outcome. With no hand marker in
+                    -- vanilla combat text, keep the established equal-hand
+                    -- midpoint policy, but only across the feasible subsets.
+                    RC6U_Raw = (RC6V_MHMid + RC6V_OHMid) / 2
+                    RC6U_Note = "Full Block compatible with both hands; feasible MH/OH average used"
+                    return RC6U_Raw, RC6U_Note, "UnitDamage feasible MH/OH ranges"
+                end
+
+                RC6U_Note = "Full Block conflicts with both captured hand ranges/Block Value"
+            end
+
+            -- Single-wield or old events without separate hand ranges retain the
+            -- bounded-range behavior from LAYEREDSTOP1.
+            if RC6U_MaxRaw and RC6U_MaxRaw < RC6U_High then
+                if RC6U_MaxRaw >= RC6U_Low then
+                    RC6U_Raw = (RC6U_Low + RC6U_MaxRaw) / 2
+                    RC6U_Note = RC6U_Note or "Full Block raw estimate narrowed by event-time Block Value"
+                else
+                    RC6U_Raw = RC6U_Low
+                    RC6U_Note = RC6U_Note or "Full Block conflicts with captured raw range/Block Value; lower raw bound retained"
+                end
+            end
+        end
+        return RC6U_Raw, RC6U_Note, "UnitDamage range"
+    end
+
+    -- Matching-context estimates are post-passive amounts immediately before
+    -- the terminal outcome. Reverse Flat/%DR/Armor to recover RAW.
+    RC6U_Post = tonumber(eventData.rc6PreOutcomeEstimate)
+    if RC6U_Post and RC6U_Post > 0 then
+        if eventData.kind == "FullBlock" and RC6U_BlockValue > 0 and RC6U_Post > RC6U_BlockValue then
+            RC6U_Post = RC6U_BlockValue
+            RC6U_Note = "Full Block terminal estimate capped by event-time Block Value"
+        end
+        RC6U_Raw = RC6U_InvertPostPassive(RC6U_Post, model, armorRate)
+        return RC6U_Raw, RC6U_Note, eventData.estimateSource or "learned post-passive estimate"
+    end
+
+    RC6U_Raw = tonumber(eventData.raw) or tonumber(eventData.rc6BaseRaw) or 0
+    if RC6U_Raw < 0 then RC6U_Raw = 0 end
+    return RC6U_Raw, "Legacy outcome RAW retained", "saved event"
+end
+
+function RC6V_OutcomeBalance(eventData)
+    if not eventData then return 999999, 0 end
+    RC6V_Raw = tonumber(eventData.raw) or 0
+    RC6V_Sum = (tonumber(eventData.taken) or 0) +
+        (tonumber(eventData.flatDR) or 0) +
+        (tonumber(eventData.physicalDR) or 0) +
+        (tonumber(eventData.magicDR) or 0) +
+        (tonumber(eventData.armor) or 0) +
+        (tonumber(eventData.block) or 0) +
+        (tonumber(eventData.resist) or 0) +
+        (tonumber(eventData.absorb) or 0) +
+        (tonumber(eventData.avoidance) or 0)
+    return math.abs(RC6V_Raw - RC6V_Sum), RC6V_Sum
+end
+
+-- The final attribution gate must check the durable outcome marker BEFORE
+-- invoking the historical RC6 stack. Pass-2A intentionally removes
+-- rc6MathVersion and other transport fields; calling the old stack first could
+-- otherwise restore base RAW/zero DR on a perfectly finalized Full Block.
+RC6V_PreviousEnsureEventAttribution = RC6B_EnsureEventAttribution
+function RC6B_EnsureEventAttribution(eventData)
+    if not eventData then return eventData end
+
+    RC6V_IsOutcome = RC6U_IsPureAvoidance(eventData.kind) or RC6U_IsLayeredTerminal(eventData.kind)
+    if RC6V_IsOutcome then
+        -- PL12 events are immutable once their accounting equation is proven.
+        if tonumber(eventData.layeredOutcomeVersion) == 2 then
+            RC6V_Delta = RC6V_OutcomeBalance(eventData)
+            if RC6V_Delta <= 0.02 then return eventData end
+            -- Do not silently rebuild a persisted malformed v2 event from
+            -- today's state. Surface the integrity failure and preserve evidence.
+            eventData.layeredOutcomeIntegrityFailed = true
+            return eventData
+        end
+
+        -- PL10/PL11 marker-1 events may already have had their transient inputs
+        -- stripped. Freeze them as historical evidence rather than letting an
+        -- old RC6 pass mutate them again. New events enter here with no marker.
+        if tonumber(eventData.layeredOutcomeVersion) == 1 then
+            return eventData
+        end
+    end
+
+    RC6V_Result = RC6V_PreviousEnsureEventAttribution(eventData)
+    if not RC6V_Result then return RC6V_Result end
+
+    if RC6U_IsPureAvoidance(RC6V_Result.kind) or RC6U_IsLayeredTerminal(RC6V_Result.kind) then
+        RC6V_Delta = RC6V_OutcomeBalance(RC6V_Result)
+        if RC6V_Delta <= 0.02 then
+            RC6V_Result.layeredOutcomeVersion = 2
+            RC6V_Result.layeredOutcomeIntegrityFailed = nil
+        else
+            -- Never bless an unbalanced terminal outcome as finalized.
+            RC6V_Result.layeredOutcomeVersion = nil
+            RC6V_Result.layeredOutcomeIntegrityFailed = true
+        end
+    end
+    return RC6V_Result
+end
+
+-- Normalize first, THEN store the event and build Timeline/Overall buckets.
+-- This makes Timeline use the same final Full Block RAW/Flat/Armor/Block split
+-- as Details, Pie, Main, Compare and FINALAGG1 instead of preserving the
+-- pre-normalization legacy transport estimate.
+RC6V_PreviousRecordEvent = MT.RecordEvent
+function MT:RecordEvent(eventData)
+    if eventData and RC6B_EnsureEventAttribution then
+        eventData = RC6B_EnsureEventAttribution(eventData)
+    end
+    return RC6V_PreviousRecordEvent(self, eventData)
+end
+
+-- ============================================================================
+-- RC6w / LAYEREDSTOP3 - retire first-generation attribution mutator
+-- ============================================================================
+-- PL12 live SavedVariables proved the Timeline initially received the correct
+-- hand-aware Full Block (19.25 RAW with Sanctuary/Armor/Block layers), but the
+-- stored event later reverted to 28.875 RAW / 0 Flat DR.  The cause was an old
+-- RC6q compatibility path: RC6_SumEventDR() still called RC6_EnsureEventAttribution(),
+-- the first-generation mutating routine.  That routine restores rc6BaseRaw and
+-- zeroes DR for non-DAMAGE outcomes, bypassing the final RC6v immutable gate.
+--
+-- RC6r's README note already identified RC6q's helper as obsolete for totals,
+-- but RC6q remained in the wrapper chain, so simply overwriting its final totals
+-- did not prevent the underlying event mutation.
+--
+-- Route every surviving legacy caller through the final outcome-aware gate.
+-- This is intentionally defined LAST, after RC6v owns RC6B_EnsureEventAttribution.
+-- There is no recursion: the RC6v chain never calls RC6_EnsureEventAttribution.
+RC6W_FirstGenerationEnsureEventAttribution = RC6_EnsureEventAttribution
+function RC6_EnsureEventAttribution(eventData)
+    if not eventData then return eventData end
+    return RC6B_EnsureEventAttribution(eventData)
+end
+

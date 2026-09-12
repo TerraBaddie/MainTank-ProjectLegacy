@@ -1,3 +1,56 @@
+MainTank Project Legacy v1.2.69-PL13 LAYEREDSTOP3
+===================================================
+
+- Fixed the remaining Main RAW vs Pie divergence on Full Block fights.
+- Root cause was not the new dual-wield solver: PL12 Timeline data proved the
+  Full Block was initially normalized correctly, but an older RC6q display path
+  later mutated the already-finalized event.
+- RC6q still called RC6_SumEventDR(), and that legacy helper still called the
+  first-generation RC6_EnsureEventAttribution().  For non-DAMAGE outcomes that
+  old routine restores rc6BaseRaw and clears Flat/%DR, bypassing LAYEREDSTOP2.
+- The PL12 Dragonmaw Raider DB showed the exact fingerprint twice: Timeline had
+  the 19.25 OH Full Block estimate, while the persisted event later became
+  28.875 RAW / 0 Flat DR and was marked layeredOutcomeIntegrityFailed.
+- RC6_SumEventDR now calls the final RC6B_EnsureEventAttribution gate.
+- The first-generation RC6 helper is additionally guarded against finalized
+  layered outcomes and, at the end of the file, all remaining legacy callers are
+  redirected to the final outcome-aware RC6v gate.
+- This retires the stale mutation path documented all the way back in the RC6r
+  README note (RC6q used an older attribution helper) instead of merely
+  overwriting the totals after the event had already been damaged.
+- No change to the desired model: Dodge/Parry/Miss = 100% Avoidance; Full Block
+  keeps Flat/%DR -> Armor -> terminal Block; Partial Block remains landed math.
+- Existing malformed PL12 saved fights are preserved as historical evidence;
+  validate with a NEW fight under PL13.
+
+MainTank Project Legacy v1.2.68-PL12 LAYEREDSTOP2
+====================================================
+
+FULL BLOCK / PIE ACCOUNTING REPAIR
+----------------------------------
+- Fixes the PL11 Dragonmaw Raider case where Main showed 606 stopped but the
+  RAW/Physical Pie summed to only 560.
+- Root cause: finalized Full Block events could be run through the older RC6
+  stack again after Pass-2A removed transient math fields. That restored base
+  RAW/zero Flat DR before the late LAYEREDSTOP1 marker blocked re-normalization.
+- LAYEREDSTOP2 checks the durable finalized-outcome marker BEFORE the older RC6
+  stack can mutate a saved event. New finalized outcome events use marker v2 and
+  must satisfy RAW = Taken + Flat/%DR + Armor + Block/Resist + Absorb + Avoidance.
+- Outcome events are now normalized before RecordEvent writes Timeline and
+  Overall buckets, so Timeline, Details, Pie, Main and FINALAGG1 share one split.
+- Dual-wield Full Block now tests the captured MH and OH UnitDamage ranges as
+  separate ranges. If only one hand can mathematically fit under event-time
+  Block Value after DR + Armor, that hand is used instead of averaging across
+  the impossible gap between MH and OH ranges.
+- Example from the supplied DB: MH 34-43, OH 17-21.5, Sanctuary 10, Armor ~35.2%,
+  Block Value 13. The MH cannot full-block; the OH can, so Full Block RAW uses
+  the OH midpoint 19.25 rather than the generic dual-wield 28.875 estimate.
+- Pure Dodge/Parry/Miss remain 100% Avoidance with zero Armor/DR/Block credit.
+- Partial Block remains the normal landed layered path.
+- Existing PL10/PL11 marker-v1 fights are left historical; test a NEW fight for
+  the corrected v2 outcome math.
+- MainTank, MainTank_Archive and MainTank_History report 1.2.68-PL12.
+
 MainTank Project Legacy v1.2.67-PL11 SHIELDSPEC1
 ===================================================
 
@@ -2773,6 +2826,7 @@ RC6s - Reload-Safe Historical DR / Pie State
 
 RC6r - Live Updating Pie Chart
 ------------------------------
+- PL13 follow-up: RC6r correctly identified RC6q's older RC6_SumEventDR attribution path as obsolete for display totals, but RC6q itself remained in the GetDisplayData wrapper chain. LAYEREDSTOP3 finally routes that legacy helper through the final RC6B outcome-aware gate so it cannot mutate finalized Full Block events underneath the corrected RC6r totals.
 - Made Pie Chart update actively during combat instead of requiring the player to return to MT Main or cycle views.
 - Uses the same event-driven concept as Timeline but batches Pie redraws to at most roughly four times per second because pie rendering is heavier.
 - MTPie reuses existing textures rather than continuously creating new frames/textures.
