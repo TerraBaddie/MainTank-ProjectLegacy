@@ -626,7 +626,7 @@ local FR1K_SVH1_TRANSIENT_FIELDS = {
     "rc6MathVersion","rc6BaseRaw","rc6ArmorRate","drRawAnchor","drSaturated",
     "drEstimated","drPctListed","drPctEffective","sanctuaryRankSource",
     "sanctuaryFlatCap","rawHintSource","rawHintLow","rawHintHigh",
-    "rawHintMHLow","rawHintMHHigh","rawHintAverage","rawHintDualWield",
+    "rawHintMHLow","rawHintMHHigh","rawHintOHLow","rawHintOHHigh","rawHintAverage","rawHintDualWield",
     "rc6PreOutcomeEstimate","rc6BlockValue","outcomeEstimateSource"
 }
 
@@ -837,6 +837,8 @@ local FR1X_P2A_EVENT_FIELDS = {
     "rawHintHigh",
     "rawHintMHLow",
     "rawHintMHHigh",
+    "rawHintOHLow",
+    "rawHintOHHigh",
     "rawHintAverage",
     "rawHintDualWield",
     "rc6PreOutcomeEstimate",
