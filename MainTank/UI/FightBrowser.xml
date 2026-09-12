@@ -1,0 +1,149 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+
+    <!-- Static list chrome for the unified Fights browser.  The existing
+         History detail/report UI remains owned by UI\History.lua. -->
+    <Frame name="MainTankFightBrowserChromeTemplate" virtual="true">
+        <Size>
+            <AbsDimension x="300" y="231"/>
+        </Size>
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString name="$parentCapacity" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="270" y="14"/></Size>
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativePoint="TOPLEFT">
+                            <Offset><AbsDimension x="15" y="-52"/></Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Button name="$parentRecentTab" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="86" y="18"/></Size>
+                <Anchors>
+                    <Anchor point="TOPLEFT" relativePoint="TOPLEFT">
+                        <Offset><AbsDimension x="15" y="-29"/></Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentArchiveTab" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="86" y="18"/></Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentRecentTab" relativePoint="RIGHT">
+                        <Offset><AbsDimension x="6" y="0"/></Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+            <Button name="$parentHistoryTab" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="86" y="18"/></Size>
+                <Anchors>
+                    <Anchor point="LEFT" relativeTo="$parentArchiveTab" relativePoint="RIGHT">
+                        <Offset><AbsDimension x="6" y="0"/></Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+        </Frames>
+    </Frame>
+
+    <!-- FIGHTBROWSER2: Recent no longer relies on one padded proportional-font
+         string.  Every logical value owns a fixed column, matching the clean
+         visual rhythm of the Archive list. -->
+    <Button name="MainTankFightBrowserRecentRowTemplate" virtual="true" inherits="UIPanelButtonTemplate">
+        <Size><AbsDimension x="270" y="18"/></Size>
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString name="$parentIndex" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="22" y="18"/></Size>
+                    <Anchors><Anchor point="LEFT" relativePoint="LEFT"><Offset><AbsDimension x="2" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentTag" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="38" y="18"/></Size>
+                    <Anchors><Anchor point="LEFT" relativePoint="LEFT"><Offset><AbsDimension x="29" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentName" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="122" y="18"/></Size>
+                    <Anchors><Anchor point="LEFT" relativePoint="LEFT"><Offset><AbsDimension x="72" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentRaw" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="68" y="18"/></Size>
+                    <Anchors><Anchor point="RIGHT" relativePoint="RIGHT"><Offset><AbsDimension x="-4" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+    </Button>
+
+    <!-- Archive keeps its existing Restore geometry, but its left text block is
+         split into the same fixed Index / Tag / Name columns so MINOR, BOSS,
+         PvP, and MAJOR all align if they coexist. -->
+    <Frame name="MainTankFightBrowserArchiveRowTemplate" virtual="true">
+        <Size><AbsDimension x="270" y="18"/></Size>
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString name="$parentIndex" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="22" y="18"/></Size>
+                    <Anchors><Anchor point="LEFT" relativePoint="LEFT"><Offset><AbsDimension x="2" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentTag" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="38" y="18"/></Size>
+                    <Anchors><Anchor point="LEFT" relativePoint="LEFT"><Offset><AbsDimension x="29" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentName" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="76" y="18"/></Size>
+                    <Anchors><Anchor point="LEFT" relativePoint="LEFT"><Offset><AbsDimension x="72" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentRaw" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="54" y="18"/></Size>
+                    <Anchors>
+                        <Anchor point="RIGHT" relativeTo="$parentRestore" relativePoint="LEFT">
+                            <Offset><AbsDimension x="-6" y="0"/></Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Button name="$parentRestore" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="60" y="18"/></Size>
+                <Anchors>
+                    <Anchor point="RIGHT" relativePoint="RIGHT">
+                        <Offset><AbsDimension x="0" y="0"/></Offset>
+                    </Anchor>
+                </Anchors>
+            </Button>
+        </Frames>
+    </Frame>
+
+    <!-- Overlay used on the seven established History buttons.  Keeping the
+         original buttons preserves their paging/click/tooltip behavior while
+         XML owns the new fixed-column geometry. -->
+    <Frame name="MainTankFightBrowserHistoryColumnsTemplate" virtual="true">
+        <Size><AbsDimension x="270" y="18"/></Size>
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString name="$parentIndex" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="22" y="18"/></Size>
+                    <Anchors><Anchor point="LEFT" relativePoint="LEFT"><Offset><AbsDimension x="2" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentTag" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="38" y="18"/></Size>
+                    <Anchors><Anchor point="LEFT" relativePoint="LEFT"><Offset><AbsDimension x="29" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentName" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="100" y="18"/></Size>
+                    <Anchors><Anchor point="LEFT" relativePoint="LEFT"><Offset><AbsDimension x="72" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentRaw" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="57" y="18"/></Size>
+                    <Anchors><Anchor point="LEFT" relativePoint="LEFT"><Offset><AbsDimension x="174" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+                <FontString name="$parentPct" inherits="GameFontHighlightSmall">
+                    <Size><AbsDimension x="33" y="18"/></Size>
+                    <Anchors><Anchor point="RIGHT" relativePoint="RIGHT"><Offset><AbsDimension x="-3" y="0"/></Offset></Anchor></Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+    </Frame>
+</Ui>

@@ -1,0 +1,9 @@
+## Interface: 11200
+## Title: MainTank Archive
+## Notes: Required MainTank companion: bounded detailed Archive storage (8 fights max).
+## Author: TerraBaddie & OpenAI
+## Dependencies: MainTank
+## Version: 1.2.67-PL11
+## SavedVariables: MainTankArchiveDB
+
+MainTank_Archive.lua

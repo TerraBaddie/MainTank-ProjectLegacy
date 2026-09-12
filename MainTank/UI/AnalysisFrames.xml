@@ -1,0 +1,28 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+
+    <!-- Shared static shell for Pie, Timeline, Details, and Biggest pages. -->
+    <Frame name="MainTankAnalysisPageTemplate" virtual="true">
+        <Size><AbsDimension x="300" y="231"/></Size>
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString name="$parentTitle" inherits="GameFontNormal">
+                    <Anchors>
+                        <Anchor point="TOPLEFT"><Offset><AbsDimension x="68" y="-9"/></Offset></Anchor>
+                        <Anchor point="TOPRIGHT"><Offset><AbsDimension x="-25" y="-9"/></Offset></Anchor>
+                    </Anchors>
+                </FontString>
+            </Layer>
+        </Layers>
+        <Frames>
+            <Button name="$parentCloseButton" inherits="UIPanelCloseButton">
+                <Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-3" y="-3"/></Offset></Anchor></Anchors>
+            </Button>
+            <Button name="$parentMainButton" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="58" y="18"/></Size>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="7" y="-6"/></Offset></Anchor></Anchors>
+            </Button>
+        </Frames>
+    </Frame>
+</Ui>

@@ -1,0 +1,49 @@
+## Interface: 11200
+## Title: MainTank
+## Notes: Deep tank mitigation & incoming-damage analysis: armor, avoidance, blocks, resists, absorbs, DR, timelines, Events/event details, comparisons, persistent boss encounter profiles, and fight history.
+## Author: TerraBaddie & OpenAI
+## Version: 1.2.67-PL11
+## SavedVariables: MainTankDB
+
+UI\PieRenderer.lua
+UI\MainFrame.xml
+UI\AnalysisFrames.xml
+Core\Engine.lua
+UI\StyleCore.lua
+Core\Session.lua
+UI\Summary.lua
+Core\BaseCommands.lua
+Core\Companions.lua
+Core\Runtime.lua
+UI\AnalysisCore.lua
+UI\AnalysisNavigation.lua
+Modules\AnalysisFeatures.lua
+Core\Mitigation.lua
+Core\CompareSync.lua
+UI\BackNavigation.lua
+Modules\Archive.lua
+Modules\Consolidation.lua
+Modules\PvPClassification.lua
+Core\SchoolMemory.lua
+Modules\PvPPersistenceSafety.lua
+Modules\BlockAnalysis.lua
+Modules\Maintenance.lua
+Core\Commands.lua
+Modules\StartupPerformance.lua
+Modules\ArchiveDiagnostics.lua
+Modules\FightViewSafety.lua
+Modules\BossProfilePersistence.lua
+Modules\BossGuard2.lua
+UI\BossProfilePolish.lua
+UI\Pie.lua
+UI\History.lua
+UI\FightBrowser.xml
+UI\FightBrowser.lua
+UI\Style.lua
+UI\SafeDragging.lua
+UI\Lifecycle.lua
+UI\NavigationPolish.lua
+UI\ComparePolish.lua
+UI\ExportPolish.lua
+Core\Release.lua
+Modules\ProjectLegacy.lua

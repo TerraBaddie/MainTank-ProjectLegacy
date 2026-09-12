@@ -1,0 +1,382 @@
+CURRENT RELEASE - v1.2.62 FINALHOTFIX2
+
+Combat Highlights remains a 300x231 managed window. Its seven two-line cards
+use 23px vertical slots so Vanilla's outlined small-font glyphs do not touch.
+This is presentation-only; authoritative event selection and Crit/Crush flags
+remain unchanged.
+
+COMPANION VERSION AUTHORITY - v1.2.61 FINALHOTFIX1
+MainTank_Archive.lua and MainTank_History.lua self-report their own package
+versions at runtime. Core/Companions.lua prefers those live values, because
+Vanilla may cache TOC Version metadata across /reload after addon files are
+replaced. TOC metadata remains a backward-compatible fallback.
+
+MainTank Current Architecture - v1.2.61 FINALHOTFIX1
+=============================================
+
+
+FINAL RELEASE FREEZE - v1.2.60
+------------------------------
+The public final release is cut directly from the tested v1.2.58 EXPORTFLOW1
+code line. The 1.2.60 cut changes release identity/documentation only; runtime
+behavior is intentionally frozen. Combat parsing, RC6 mitigation, Compare Sync,
+Boss Profiles, Archive/History, restore ordering, PvP safety, Export and
+Highlights remain the tested implementations described below.
+
+
+RELEASECLEAN1 AUDIT - v1.2.55
+-----------------------------
+Release cleanup is based directly on the proven v1.2.52 MAINCRISP1 baseline.
+The discarded v1.2.53/v1.2.54 XML experiment is not part of this source line.
+MainTank intentionally remains at the three proven XML files: MainFrame.xml,
+AnalysisFrames.xml, and FightBrowser.xml. No frame-creation timing was moved.
+
+The audit removes only code proven unreferenced in the packaged source, including
+dead local helpers and unused runtime/public aliases, cleans stale package-version
+globals, and makes TOC metadata the current companion
+version authority with legacy globals accepted only as an old-build fallback.
+Combat parsing, RC6 mitigation, Sync, persistence/restore, Archive/History,
+Boss recovery, PvP quarantine, and UI behavior are intentionally unchanged.
+
+RELEASE PRINCIPLE
+-----------------
+MainTank is a mature WoW 1.12.1 / VanillaPlus mitigation analyzer. Release
+hardening favors proven combat/persistence behavior, but the source layout is
+now modular enough that presentation, session state, analysis, and mitigation
+compatibility layers can be maintained independently.
+
+REFACXML1 does NOT rewrite mitigation arithmetic, combat accounting, Archive /
+History retention, SI2/DC2 restore order, or PvP persistence safety. It changes
+source ownership and static UI declaration while preserving the historical
+wrapper order.
+
+REFACXML2_UIFIX1 preserves that architecture and removes the unused XML summary
+row-divider textures whose visibility differed from the pre-refactor Lua UI.
+
+REFACXML2_UIFIX2 adds a final UI/Lifecycle.lua reconciliation layer. Historical
+CreateUI wrappers may add full-size controls after saved Mini Mode has already
+been restored; the final layer reapplies the Full/Mini visibility invariant
+after the complete CreateUI chain and after every SetMiniMode transition.
+
+REFACXML2_UIFIX3 makes that invariant registration-time authoritative. Every
+full-mode control is registered through RegisterFullControl(), which immediately
+hides controls created while Mini Mode is active. Final reconciliation remains
+as defense-in-depth at Initialize/world-entry/SetMiniMode/pfUI-skin boundaries.
+
+FIGHTBROWSER1 replaces the standalone History entry point with one player-facing
+Fights browser. Recent (8 detailed), Archive (8 priority detailed), and History
+(64 summaries) are exposed as tabs over the existing History frame. Recent
+selection uses the existing numbered saved-fight view; Archive Restore calls the
+existing restore path; History Summary/More Info remain the proven HIST64UI14 UI.
+No new persistence tier or duplicate fight payload is introduced.
+
+
+FIGHTBROWSER2 row-geometry rule
+--------------------------------
+Recent, Archive, and History list rows use fixed pixel columns for record index,
+priority/type tag, fight name, and RAW. History adds a dedicated mitigation
+percentage column. Do not regress these rows to padded monolithic strings: the
+Vanilla proportional font makes MINOR/BOSS/PvP/MAJOR and variable-width labels
+visibly drift even when string.format field widths are numerically identical.
+
+PHYSICAL ADDON LAYOUT
+---------------------
+Three addon folders are distributed so each persistence tier has its own physical
+SavedVariables failure domain:
+
+  MainTank/
+  MainTank_Archive/   (required enabled detailed Archive backend)
+  MainTank_History/   (required enabled lightweight History backend)
+
+Only MainTank owns combat/UI logic. The two companions are intentionally tiny.
+Their TOCs declare `## Dependencies: MainTank`; they are normal startup addons,
+not LoadOnDemand. MainTank itself does not depend on them at TOC level because
+that would create a circular dependency. At world entry the core verifies both
+companions are installed, loaded, and version-matched, and warns once if not.
+
+PERSISTENCE CONTRACT
+--------------------
+Per character/profile:
+
+  MainTankDB profile.fights                 = 8 Recent detailed fights maximum
+  MainTankArchiveDB profile.fights          = 8 priority Archive detailed fights maximum
+  MainTankHistoryDB profile.summaries       = 64 lightweight History summaries maximum
+
+Hard ceiling: 80 combat records total; 16 detailed/event-bearing fights maximum.
+The 64 History records are summary-only and contain no detailed event payloads.
+Archive retention priority: Boss > Major (50K+ RAW) > Minor > PvP. Within equal priority,
+newer fights win.
+
+SVH2 archive rule:
+- Recent SVH1 numeric compact contexts must NOT be expanded back into legacy
+  long-string contextSnapshots when archiving.
+- Each archived fight owns a small numeric compactContextPool containing only
+  mitigation-relevant snapshots referenced by that fight.
+- Pure PvP archived fights persist authoritative totals/events but no RC6 context graph.
+- MainTankDB may retain only lightweight archive/history manifests; detailed
+  external payloads must never alias back into the core profile.
+
+RESTORE INVARIANT - SI2/DC2
+---------------------------
+The proven DC2 lesson is permanent:
+
+- Early/pre-Core restore may reconnect persistent snapshot/context data.
+- It must NOT rebuild or alias live Current/Overall runtime state early.
+- Current/Overall reconstruction remains in the later proven Pass-2B chain.
+- Consolidation/storage normalization runs around this architecture without
+  changing its ordering.
+
+The historical 50% startup freeze was not ordinary DB corruption; rebuilding or
+aliasing live Current/Overall too early could cause the client to hang during
+login. Source refactors must not reorder that restore chain.
+
+PVP PERSISTENCE INVARIANT - PVPSAFETY6 / RELEASEGUARD1
+------------------------------------------------------
+Two confirmed 50% loading-screen failure patterns must be checked early:
+
+1. Overall/finalized-fight mismatch caused by late PvP retaliation/proc tails.
+2. Pure-PvP RC6 mitigation-context graphs persisted even when fight accounting
+   was otherwise consistent.
+
+Pure PvP rule:
+- Keep finalized authoritative raw/taken/block/resist/absorb/DR totals.
+- Do NOT persist contextID, context, rc6ContextSnapshot, fight-local
+  contextSnapshots, or unused profile RC6 context-pool entries for pure PvP.
+- RELEASEGUARD1 applies this quarantine to every character profile and to both
+  Recent and Archive detailed fights.
+
+PvE rule:
+- Preserve context data genuinely referenced by PvE/mixed-PvE fights.
+- Player-attributed PvE effects such as Mind Control mechanics must not be
+  mistaken for disposable pure-PvP data.
+
+SOURCE LAYERS - REFACXML1
+-------------------------
+Bootstrap ownership
+  Core/Engine.lua creates the MainTank namespace. The old comment-only root
+  MainTank.lua bootstrap was removed in RELEASECLEAN1.
+
+UI/MainFrame.xml
+  Virtual template for static Main summary-window geometry: title/subtitle,
+  standard controls, eight summary rows/dividers, and mini-mode row shells.
+
+UI/FightBrowser.xml + UI/FightBrowser.lua
+  Unified Recent / Archive / History player browser. XML owns the fixed tab/row
+  shell; Lua binds live counts, saved-fight selection, Archive Restore, and the
+  conditional return-to-browser Back control. Existing History detail UI remains
+  in UI/History.lua and is reused inside this browser rather than duplicated.
+
+UI/AnalysisFrames.xml
+  Virtual shared 300x231 shell for Timeline, Pie, Events (DETAILS internally), and Biggest pages.
+  Page-specific/dynamic content remains in Lua.
+
+Core/Engine.lua
+  The remaining true combat engine (~1k lines): data primitives, armor/block/raw
+  estimation, target damage memory, event construction/accounting, avoidance,
+  damage recording, and the Vanilla 1.12 combat-message parser.
+
+UI/StyleCore.lua
+  Legacy/pfUI styling and analysis-tooltip presentation extracted from Engine.
+
+Core/Session.lua
+  Current/Overall view state, base migration, session lifecycle, profile restore,
+  and base persistence synchronization extracted from Engine.
+
+UI/Summary.lua
+  Main summary controller. Binds behavior/live values to UI/MainFrame.xml and
+  retains mini-mode, block tooltip/report, display updates, and SavedVariables
+  position behavior.
+
+UI/Lifecycle.lua
+  Final main-window mode reconciliation. Loaded after the historical UI wrapper
+  stack so late-created full-size controls cannot remain visible when a saved
+  Mini Mode is restored during login or /reload.
+
+Core/BaseCommands.lua
+  Original slash-command foundation. Later modules intentionally wrap it.
+
+Core/Runtime.lua
+  Initialize() and the authoritative MainTankEventFrame/event-routing layer.
+
+UI/AnalysisCore.lua
+  Base Timeline, Pie, Biggest Hits, and Events/Event Inspector implementations (DETAILS internally).
+
+UI/AnalysisNavigation.lua
+  Historical RC1 navigation/page-manager compatibility stack. Its generic page
+  shell now uses UI/AnalysisFrames.xml; wrapper order is otherwise preserved.
+
+Modules/AnalysisFeatures.lua
+  Historical Export, Boss Profiles/Breakdown, and Tank Compare compatibility
+  stack. Kept together because later layers mutate helpers captured earlier.
+
+Core/Mitigation.lua
+  Historical RC5 through RC6t mitigation-context/DR attribution stack. KEEP THIS
+  AS ONE LEXICAL MODULE unless a future targeted rewrite proves safe: later RC6
+  layers reassign RC5-local classifiers observed by earlier closures.
+
+UI/BackNavigation.lua
+  Final historical Back-navigation compatibility layer.
+
+Modules/Archive.lua
+  Proven SI2/DC2 persistence and compaction chain. Restore ordering is frozen.
+
+Modules/Consolidation.lua
+  Three-file 8 Recent + 8 Archive + 64 History policy and migration. Current
+  companion DBs are expected to be loaded normally; LoadAddOn is retained only
+  for importing retired pre-v1.2 General/Boss archive folders. Incomplete
+  single-folder migrations preserve their legacy payload if a companion is
+  unavailable and retry on a later login.
+
+Core/Companions.lua
+  Required MainTank_Archive/MainTank_History health checks. Distinguishes missing
+  vs installed-but-not-loaded companions, catches package-version mismatch, and
+  keeps warnings bounded to one per issue per login/reload.
+
+Modules/PvPClassification.lua / Modules/PvPPersistenceSafety.lua
+  PvP/PvE classification, retaliation finalization, mismatch recovery, learning
+  suppression, and pure-PvP RC6 context quarantine.
+
+Core/SchoolMemory.lua, Modules/BlockAnalysis.lua, Modules/Maintenance.lua,
+Modules/ArchiveDiagnostics.lua, Modules/FightViewSafety.lua,
+Modules/BossProfilePersistence.lua, UI/Pie.lua, UI/History.lua, UI/Style.lua,
+UI/SafeDragging.lua
+  Focused later hardening/presentation modules. Their established load order
+  remains unchanged after the extracted Engine layers.
+
+PRIVATE ENGINE BRIDGE
+---------------------
+Lua locals cannot cross files. REFACXML1 uses MainTank._engine as a runtime-only
+private bridge for the small set of original lexical helpers/objects required by
+extracted layers. It is not written to SavedVariables and is not a public addon
+API.
+
+The StyleLegacyButton bridge uses an override dispatch slot intentionally. This
+preserves the old monolith's late RC6o behavior where a later assignment mutated
+a lexical style helper already captured by earlier UI closures.
+
+MODULARIZATION RULE
+-------------------
+Do not chase a smaller Engine.lua merely for line count. The current boundary is
+intentional: parser/event math that shares combat memory remains together. Future
+splits should require a clean dependency seam and a behavior-preservation test.
+
+Likewise, XML is for stable declaration/geometry. Runtime data rows, event-driven
+content, persistence state, combat logic, and highly dynamic graphs stay in Lua.
+
+RELEASE CHECK
+-------------
+Use /mt releasecheck before and after stress testing. A release candidate should
+show:
+
+- Recent <= 8
+- Archive <= 8
+- History <= 64 enriched aggregate summaries
+- Total <= 80
+- Pure-PvP persisted context references = 0
+
+For REFACXML1 specifically, smoke-test after a full client restart (not only
+/reload): Main/mini UI, RAW/Physical/Magic, Current/Overall, Timeline, Pie,
+Events, Biggest, DR, Back navigation, History, one completed PvE fight, one
+Archive/History promotion, logout/login persistence, and the known PvP safety
+path before treating the refactor as release-ready.
+
+NAVPOLISH1 release presentation layer
+------------------------------------
+UI/NavigationPolish.lua is the final presentation-only wrapper. It owns button-text uniformity and Combat Highlights navigation without modifying combat, mitigation, or persistence ownership.
+
+NAVPOLISH2 typography rule
+--------------------------
+Release-facing text buttons clone the live Current-button font so XML and late Lua-created controls share identical font family/size/flags. Action/navigation text is white. Current/Overall, RAW/Physical/Magic, and Fights tab groups use grey only for the active selector/tab.
+
+NAVPOLISH3 selector-label rule
+------------------------------
+The three shared mitigation view selectors are displayed consistently as RAW / PHYSICAL / MAGIC on the Main, Timeline, and Pie Chart surfaces. Internal keys remain RAW, PHYSICAL, and MAGIC.
+
+NAVPOLISH4 analysis View-button color rule
+-----------------------------------------
+Timeline and Pie Chart use a single cycling View: RAW / PHYSICAL / MAGIC action button. It is always white. Historical RC6P gold/yellow selector text is retired; true selected-grey styling remains reserved for multi-button tab/selector groups.
+
+
+NAVPOLISH5 Main selector hierarchy
+---------------------------------
+The Main page uses geometry, not a second font size, to distinguish selector levels: Current/Overall are 92x20 primary view buttons; RAW/PHYSICAL/MAGIC are 70x16 secondary mitigation-page tabs. The 300px frame footprint and summary-row geometry remain unchanged.
+
+
+BOSSPROFILE1 persistence + UI rules
+-----------------------------------
+- BossProfilePersistence is the final authority for bossHistory restore/sync. It must seed persisted bossHistory/bossProfileIndex before entering older Restore wrappers because historical one-time repair layers may call Sync while Restore is still in progress.
+- A lost standalone Boss Profile may be rebuilt only from retained detailed Recent/Archive events and only when the detailed fight primaryEnemy matches authoritative skull-level identity (UnitLevel == -1 memory / saved Boss name / the v1.2.46 fight-local bossSkull marker). Old plain isBoss flags do not self-authenticate.
+- bossSkull is written only at the live UnitLevel == -1 finalization boundary, copied with the bounded detailed fight, and carried into History summaries as identity metadata. It is safe to trust only when bossName == primaryEnemy.
+- Rebuilt/new profiles use the finalized event stream for RAW/Taken, Armor, Avoidance, Block, Resist, Absorb, Flat DR, Physical DR, Magic DR, schools and abilities. Do not recalculate RC6 mitigation independently.
+- Restoring a detailed archived Boss fight may recover a missing profile immediately. The bossHistory store remains bounded to 30 records and remains in the core character profile; this is recovery hardening, not a new persistence tier.
+- Boss Profile presentation stays 300x231. Damage Schools and Top Boss Abilities use fixed NAME / RAW / TAKEN columns; metadata shows Encounter index, saved time, duration/events/crit/crush, Boss RAW Share, Adds RAW, and the RC6-complete mitigation breakdown.
+
+
+RELEASEPOLISH1 cleanup rules
+----------------------------
+- Current companion addons are required enabled storage backends, not optional
+  LoadOnDemand vaults.
+- Missing/disabled/mismatched companions must be visible to the player and must
+  make /mt releasecheck fail rather than silently reporting empty stores as PASS.
+- Legacy General/Boss Archive LoadAddOn calls are migration-only and may remain.
+- The RC3b Bloodsail Raider test-boss override is retired; new Boss Profiles are
+  skull-level (?? / UnitLevel == -1) only. Legacy stored test profiles remain
+  readable for compatibility.
+- Historical wrapper layers are not deleted merely because a newer layer
+  overrides the same method. Many are captured by later closures and form part
+  of the proven load/restore behavior. Remove only code proven unreachable and
+  uncaptured.
+
+VERSION OWNERSHIP
+-----------------
+Core/Release.lua is the sole runtime owner of MainTank.packageVersion,
+MainTank.version, and MainTank.releaseBuild. Historical RC/FR section labels
+remain comments only; compatibility layers must not reassign the public version
+while loading.
+
+BOSSPROFILE2 Boss section paging rules
+----------------------------------------
+- Damage Schools and Top Boss Abilities each expose three fixed-column rows per page inside the existing 300x231 Boss Profile window.
+- Each section owns independent non-persistent `< page/total >` controls and shows them only when more than three rows exist.
+- Switching the selected Boss encounter resets both section pages to page 1; section paging never changes or persists Boss encounter data.
+- Paging is presentation-only. Boss Profile persistence/recovery, RC6 aggregation, retention classification, and the bounded bossHistory architecture remain authoritative and unchanged.
+
+
+COMPARE1 Tank Compare rules
+---------------------------
+- RC5 remains authoritative for tank-summary encounter grouping, selection, history retention, and the MTANK1 core sync protocol.
+- Core/CompareSync.lua loads after Mitigation and only reasserts fightID/endedAt metadata plus an optional MTANK2 RC6 extension containing Flat/Physical/Magic DR. MTANK1 is not replaced.
+- UI/ComparePolish.lua loads after NavigationPolish. It calls the existing UpdateTankCompareWindow first and reads the authoritative row.data summaries produced by RC5; it does not independently regroup encounters.
+- Compare deltas are selected tank minus the local player's summary for the same synced encounter. They are deliberately neutral +/- values because tank assignment, uptime, and duration may differ.
+
+
+CRUSHFIX1 PARSER RULE (v1.2.56)
+--------------------------------
+Vanilla 1.12 commonly reports crushing white swings as:
+  Mob hits you for N. (crushing)
+The white-hit parser must inspect the trailing marker before returning from the
+generic "hits you for" branch. event.crushing is the sole downstream authority;
+Boss Profiles/Events/Export must not independently infer crushing from damage.
+
+
+CRITCRUSH1 HIGHLIGHTS RULE (v1.2.57)
+--------------------------------------
+Combat Highlights derives Largest Crit / Crush Hit from GetDisplayEvents(), the
+same authoritative event stream already used by Highlights. The combined row is
+presentation metadata only. Its View Event Details action applies the existing
+Details filter system with kind CRIT_CRUSH; EventMatchesDetailsFilter accepts an
+event only when event.critical or event.crushing is already true. No page may
+re-infer Critical/Crushing from damage magnitude or parse combat text again.
+
+
+EXPORTFLOW1 FIXED-SIZE PRESENTATION RULE (v1.2.58)
+--------------------------------------------------
+Detailed and Boss/Profile Export remain views over the existing authoritative export
+formatters. The compact 300x231 viewer may wrap and page those strings for display,
+but must not recalculate combat values or create a second data model. Select All must
+still expose the complete report, not just the visible page.
+
+Combat Highlights keeps seven stable card slots. A category with no meaningful event
+uses an explicit non-clickable zero placeholder instead of hiding its row. A selected
+Highlight event is valid only while that exact event object belongs to GetDisplayEvents()
+for the current fight; changing fights clears stale selection state before rendering.

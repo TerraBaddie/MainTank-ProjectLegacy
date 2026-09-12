@@ -1,0 +1,128 @@
+<Ui xmlns="http://www.blizzard.com/wow/ui/"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://www.blizzard.com/wow/ui/ ..\FrameXML\UI.xsd">
+
+    <!-- MainTankMainFrameTemplate: static summary-window geometry lives here.
+         Runtime state, data binding, drag persistence, page switching, and
+         combat behavior remain in Lua. The template is virtual so MainTank
+         preserves its historical lazy CreateUI lifecycle. -->
+    <Frame name="MainTankMainFrameTemplate" virtual="true">
+        <Size>
+            <AbsDimension x="300" y="231"/>
+        </Size>
+
+        <Layers>
+            <Layer level="OVERLAY">
+                <FontString name="$parentTitle" inherits="GameFontNormal">
+                    <Anchors>
+                        <Anchor point="TOPLEFT" relativePoint="TOPLEFT">
+                            <Offset><AbsDimension x="74" y="-9"/></Offset>
+                        </Anchor>
+                        <Anchor point="TOPRIGHT" relativePoint="TOPRIGHT">
+                            <Offset><AbsDimension x="-94" y="-9"/></Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+
+                <FontString name="$parentSubtitle" inherits="GameFontHighlightSmall">
+                    <Anchors>
+                        <Anchor point="TOP" relativeTo="$parentTitle" relativePoint="BOTTOM">
+                            <Offset><AbsDimension x="0" y="-3"/></Offset>
+                        </Anchor>
+                    </Anchors>
+                </FontString>
+
+                <!-- Full-size summary rows. -->
+                <FontString name="$parentRow1Label" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="16" y="-102"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow1Value" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-16" y="-102"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow2Label" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="16" y="-117"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow2Value" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-16" y="-117"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow3Label" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="16" y="-132"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow3Value" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-16" y="-132"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow4Label" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="16" y="-147"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow4Value" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-16" y="-147"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow5Label" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="16" y="-162"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow5Value" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-16" y="-162"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow6Label" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="16" y="-177"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow6Value" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-16" y="-177"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow7Label" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="16" y="-192"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow7Value" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-16" y="-192"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow8Label" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="16" y="-207"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentRow8Value" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-16" y="-207"/></Offset></Anchor></Anchors></FontString>
+                <!-- Mini-mode rows. Lua owns visibility and text only. -->
+                <FontString name="$parentMini1Label" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="14" y="-35"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentMini1Value" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-14" y="-35"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentMini2Label" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="14" y="-52"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentMini2Value" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-14" y="-52"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentMini3Label" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="14" y="-69"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentMini3Value" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-14" y="-69"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentMini4Label" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="14" y="-86"/></Offset></Anchor></Anchors></FontString>
+                <FontString name="$parentMini4Value" inherits="GameFontHighlightSmall"><Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-14" y="-86"/></Offset></Anchor></Anchors></FontString>
+            </Layer>
+        </Layers>
+
+        <Frames>
+            <Button name="$parentCloseButton" inherits="UIPanelCloseButton">
+                <Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-3" y="-3"/></Offset></Anchor></Anchors>
+            </Button>
+
+            <Button name="$parentShrinkButton" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="18" y="18"/></Size>
+                <Anchors><Anchor point="TOPRIGHT" relativeTo="$parentCloseButton" relativePoint="TOPLEFT"><Offset><AbsDimension x="-2" y="0"/></Offset></Anchor></Anchors>
+            </Button>
+
+            <Button name="$parentTimelineButton" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="62" y="18"/></Size>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="8" y="-6"/></Offset></Anchor></Anchors>
+            </Button>
+
+            <Button name="$parentBiggestButton" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="62" y="18"/></Size>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="8" y="-29"/></Offset></Anchor></Anchors>
+            </Button>
+
+            <Button name="$parentDetailsButton" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="46" y="18"/></Size>
+                <Anchors><Anchor point="TOPRIGHT"><Offset><AbsDimension x="-29" y="-29"/></Offset></Anchor></Anchors>
+            </Button>
+
+            <Button name="$parentPieButton" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="38" y="18"/></Size>
+                <Anchors><Anchor point="TOPRIGHT" relativeTo="$parentShrinkButton" relativePoint="TOPLEFT"><Offset><AbsDimension x="-2" y="0"/></Offset></Anchor></Anchors>
+            </Button>
+
+            <Button name="$parentCurrentButton" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="92" y="20"/></Size>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="54" y="-47"/></Offset></Anchor></Anchors>
+            </Button>
+
+            <Button name="$parentOverallButton" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="92" y="20"/></Size>
+                <Anchors><Anchor point="LEFT" relativeTo="$parentCurrentButton" relativePoint="RIGHT"><Offset><AbsDimension x="8" y="0"/></Offset></Anchor></Anchors>
+            </Button>
+
+            <Button name="$parentRawButton" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="70" y="16"/></Size>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="37" y="-72"/></Offset></Anchor></Anchors>
+            </Button>
+            <Button name="$parentPhysicalButton" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="70" y="16"/></Size>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="115" y="-72"/></Offset></Anchor></Anchors>
+            </Button>
+            <Button name="$parentMagicButton" inherits="UIPanelButtonTemplate">
+                <Size><AbsDimension x="70" y="16"/></Size>
+                <Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="193" y="-72"/></Offset></Anchor></Anchors>
+            </Button>
+
+            <!-- Mouse hit regions for summary rows. -->
+            <Frame name="$parentRow1Hit"><Size><AbsDimension x="276" y="15"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-99"/></Offset></Anchor></Anchors></Frame>
+            <Frame name="$parentRow2Hit"><Size><AbsDimension x="276" y="15"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-114"/></Offset></Anchor></Anchors></Frame>
+            <Frame name="$parentRow3Hit"><Size><AbsDimension x="276" y="15"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-129"/></Offset></Anchor></Anchors></Frame>
+            <Frame name="$parentRow4Hit"><Size><AbsDimension x="276" y="15"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-144"/></Offset></Anchor></Anchors></Frame>
+            <Frame name="$parentRow5Hit"><Size><AbsDimension x="276" y="15"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-159"/></Offset></Anchor></Anchors></Frame>
+            <Frame name="$parentRow6Hit"><Size><AbsDimension x="276" y="15"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-174"/></Offset></Anchor></Anchors></Frame>
+            <Frame name="$parentRow7Hit"><Size><AbsDimension x="276" y="15"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-189"/></Offset></Anchor></Anchors></Frame>
+            <Frame name="$parentRow8Hit"><Size><AbsDimension x="276" y="15"/></Size><Anchors><Anchor point="TOPLEFT"><Offset><AbsDimension x="12" y="-204"/></Offset></Anchor></Anchors></Frame>
+        </Frames>
+    </Frame>
+</Ui>
