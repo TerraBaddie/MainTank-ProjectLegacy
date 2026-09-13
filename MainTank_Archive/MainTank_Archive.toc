@@ -3,7 +3,7 @@
 ## Notes: Required MainTank companion: bounded detailed Archive storage (8 fights max).
 ## Author: TerraBaddie & OpenAI
 ## Dependencies: MainTank
-## Version: 1.2.69-PL13
+## Version: 1.2.70-PL14
 ## SavedVariables: MainTankArchiveDB
 
 MainTank_Archive.lua
